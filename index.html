@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="canonical" href=".">
-    <title>Shivam JCOB: Banana Pursuit</title>
+    <title>Shivam JCOB: Banana Pursuit - Intro Fight</title>
     
     <!-- Mandatory AMP Core JS Library -->
     <script async src="https://cdn.ampproject.org/v0.js"></script>
@@ -28,13 +28,15 @@
             justify-content: center;
             min-height: 100vh;
             user-select: none;
-            overflow-x: hidden;
+            overflow: hidden;
         }
         .container {
             width: 100%;
             max-width: 900px;
             padding: 10px;
             box-sizing: border-box;
+            opacity: 0;
+            animation: fadeInContainer 0.5s ease-out 6s forwards;
         }
         .game-wrapper {
             position: relative;
@@ -58,102 +60,197 @@
             border-radius: 6px;
         }
 
-        /* --- Artistic Intro Animation Elements --- */
-        .intro-overlay {
+        /* =========================================
+           ARTISTIC INTRO ANIMATION 
+           ========================================= */
+        .intro-stage {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0d0c1d;
-            z-index: 999;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #241f4a 0%, #0d0c1d 100%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 8vh 0; /* Keeps clear spacing from edges */
+            pointer-events: none;
+            animation: exitStage 1s steps(1) 6s forwards;
+        }
+
+        /* Safe Top Zone for Title & Queen */
+        .title-zone {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            pointer-events: none;
-            /* Animation to sweep the curtain away */
-            animation: hideOverlay 0.8s cubic-bezier(0.77, 0, 0.175, 1) 3s forwards;
+            text-align: center;
+            position: relative;
+            z-index: 1010;
         }
 
-        .intro-title {
-            font-size: 2.5rem;
+        .queen-icon {
+            font-size: 70px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px #ff4e50);
+            animation: queenPulse 2s infinite;
+        }
+
+        .title-card {
+            opacity: 0;
+            animation: titleReveal 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 4.2s forwards;
+        }
+        .title-main {
+            font-size: 3rem;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 6px;
-            margin-bottom: 10px;
-            text-align: center;
             background: linear-gradient(45deg, #ffde17, #ff4e50);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            /* Glow and Pop effect */
-            animation: titleReveal 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both,
-                       pulseGlow 2s ease-in-out infinite alternate;
-        }
-
-        .intro-subtitle {
-            font-size: 1rem;
-            color: #64748b;
+            margin: 0;
             letter-spacing: 4px;
+        }
+        .title-sub {
+            color: #64748b;
+            letter-spacing: 8px;
             text-transform: uppercase;
-            animation: fadeIn 1s ease-out 1s both;
+            font-size: 0.9rem;
+            margin-top: 5px;
         }
 
-        .intro-scanline {
-            position: absolute;
-            top: 0;
-            left: 0;
+        /* Safe Isolated Bottom Zone for Fighting Ring */
+        .fight-ring {
+            position: relative;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0) 95%,
-                rgba(255, 222, 23, 0.04) 95%
-            );
-            background-size: 100% 4px;
+            height: 200px; /* Locked height prevents drifting into text */
+            margin-bottom: 5vh;
         }
 
-        /* --- Keyframe Definitions --- */
+        .fighter {
+            position: absolute;
+            font-size: 90px;
+            bottom: 0;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        /* Shivam (Black Gorilla) */
+        .shivam {
+            left: 15%;
+            animation: 
+                shivamEntry 1s ease-out 0.5s forwards,
+                shivamFightSequence 4s linear 1.5s forwards;
+        }
+
+        /* Orange Ape */
+        .ape {
+            right: 15%;
+            transform: scaleX(-1);
+            animation: 
+                apeEntry 1s ease-out 0.5s forwards,
+                apeFightSequence 4s linear 1.5s forwards;
+        }
+
+        /* Hit FX Sparks (Anchored strictly inside combat zone) */
+        .fx {
+            position: absolute;
+            font-size: 50px;
+            opacity: 0;
+            bottom: 30px;
+            animation: fxSequence 4s linear 1.5s;
+        }
+
+        /* =========================================
+           KEYFRAMES
+           ========================================= */
+        @keyframes fadeInContainer { to { opacity: 1; } }
+        @keyframes exitStage { to { transform: translateY(-100%); display: none; } }
+        @keyframes queenPulse { 
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px #ff4e50); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 35px #ff4e50); }
+        }
+
+        /* Entry Paths */
+        @keyframes shivamEntry {
+            0% { transform: translateX(-200px) rotate(-20deg); opacity: 0; }
+            100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+        }
+        @keyframes apeEntry {
+            0% { transform: translateX(200px) scaleX(-1) rotate(20deg); opacity: 0; }
+            100% { transform: translateX(0) scaleX(-1) rotate(0deg); opacity: 1; }
+        }
+
+        /* Combat Sequences */
+        @keyframes shivamFightSequence {
+            0% { left: 15%; }
+            10% { left: 20%; }
+            15% { left: 15%; }
+            20% { left: 38%; transform: scale(1.1) rotate(10deg); }
+            25% { left: 38%; }
+            30% { left: 15%; transform: scale(1) rotate(0deg); }
+            50% { transform: translateY(-60px); }
+            60% { transform: translateY(0); }
+            75% { left: 42%; transform: rotate(-15deg); }
+            85% { left: 30%; opacity: 1; }
+            100% { left: -250px; opacity: 0; }
+        }
+
+        @keyframes apeFightSequence {
+            0% { right: 15%; }
+            20% { right: 15%; transform: scaleX(-1) translateX(25px); }
+            25% { right: 15%; transform: scaleX(-1); }
+            40% { right: 38%; transform: scaleX(-1) scale(1.1); }
+            55% { right: 15%; transform: scaleX(-1); }
+            75% { right: 42%; transform: scaleX(-1) rotate(15deg); }
+            85% { right: 30%; opacity: 1; }
+            100% { right: -250px; opacity: 0; }
+        }
+
+        /* Clashed Hit FX Location */
+        @keyframes fxSequence {
+            0%, 19% { opacity: 0; left: 47%; transform: scale(0); }
+            20% { opacity: 1; left: 47%; transform: scale(1.2); }
+            23% { opacity: 0; left: 47%; transform: scale(1.6); }
+            100% { opacity: 0; }
+        }
+
+        /* Title Reveal */
         @keyframes titleReveal {
-            0% { transform: scale(0.8); opacity: 0; filter: blur(10px); }
-            100% { transform: scale(1); opacity: 1; filter: blur(0); }
-        }
-
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulseGlow {
-            0% { filter: drop-shadow(0 0 5px rgba(255,222,23,0.2)); }
-            100% { filter: drop-shadow(0 0 25px rgba(255,78,80,0.6)); }
-        }
-
-        @keyframes hideOverlay {
-            0% { transform: translateY(0); opacity: 1; }
-            99% { transform: translateY(-100%); opacity: 0; }
-            100% { transform: translateY(-100%); opacity: 0; display: none; }
+            0% { opacity: 0; transform: translateY(-20px); filter: blur(5px); }
+            100% { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
     </style>
 </head>
 <body>
 
     <!-- Artistic Intro Layer -->
-    <div class="intro-overlay">
-        <div class="intro-scanline"></div>
-        <div class="intro-title">Banana Pursuit</div>
-        <div class="intro-subtitle">Shivam JCOB Edition</div>
+    <div class="intro-stage">
+        <!-- Top Container: Separates Crown and Title from Fighters -->
+        <div class="title-zone">
+            <div class="queen-icon">💖</div>
+            <div class="title-card">
+                <h1 class="title-main">Banana Pursuit</h1>
+                <div class="title-sub">Shivam JCOB Edition</div>
+            </div>
+        </div>
+
+        <!-- Bottom Container: Isolated Combat Arena -->
+        <div class="fight-ring">
+            <div class="fighter shivam">🦍</div> 
+            <div class="fighter ape">🦧</div>   
+            <div class="fx">💥</div>
+        </div>
     </div>
 
+    <!-- Main Game Container -->
     <div class="container">
         <div class="game-wrapper">
-            <!-- ⚡ FIXED: Uses relative path to guarantee same-environment serving on Vercel -->
             <amp-iframe width="900" height="450"
                 sandbox="allow-scripts allow-forms allow-popups"
                 layout="responsive"
                 frameborder="0"
                 src="./game-engine.html">
-                <!-- Fallback layout block mandatory for AMP iframes close to viewports -->
                 <div placeholder class="loading-placeholder" style="background:#141226;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
                     🎬 LOADING BROWSER ENGINE...
                 </div>
