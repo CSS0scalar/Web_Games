@@ -1,3 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shivam JCOB - Rizz Run</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0a16;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 450px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 800px;
+            height: 450px;
+        }
+
+        /* The game screen sits on top of the menu screen */
+        #gameCanvas {
+            z-index: 1;
+        }
+
+        #animeMenuCanvas {
+            z-index: 0;
+        }
+
+        /* UI Overlays */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 800px;
+            height: 450px;
+            z-index: 10;
+            pointer-events: none;
+            box-sizing: border-box;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .ui-box {
+            background: rgba(18, 16, 38, 0.75);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 1px;
+        }
+
+        #score-box {
+            color: #fbbf24;
+            font-size: 18px;
+        }
+
+        #rizz-status {
+            color: #f43f5e;
+            font-size: 16px;
+        }
+
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 800px;
+            height: 450px;
+            background: rgba(11, 10, 22, 0.85);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.4s ease;
+        }
+
+        #start-button {
+            background: #f43f5e;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 22px;
+            font-weight: 900;
+            border-radius: 50px;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(244, 63, 94, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- The Start Screen Menu Layer -->
+        <div id="start-overlay">
+            <h1 style="margin-bottom: 20px; font-weight: 900; letter-spacing: 2px; color: #fff;">SHIVAM JCOB: RIZZ RUN</h1>
+            <button id="start-button" onclick="startGameStory()">START ADVENTURE</button>
+        </div>
+
+        <!-- Gameplay HUD Head-Up Display -->
+        <div id="ui-layer">
+            <div id="score-box" class="ui-box">SCORE: 0</div>
+            <div id="rizz-status" class="ui-box">TAP START TO PLAY</div>
+        </div>
+
+        <!-- Two Canvas System -->
+        <canvas id="animeMenuCanvas" width="800" height="450"></canvas>
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+    </div>
+
 <script>
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -513,7 +650,6 @@ function drawElegantQueen(x, y) {
     ctx.fillStyle = "#222538";
     ctx.beginPath(); ctx.arc(0, -10, 11, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "rgba(244, 63, 94, 0.4)";
-    // ✅ FIXED: Changed fill() to ctx.fill()
     ctx.beginPath(); ctx.arc(-6, -6, 3, 0, Math.PI * 2); ctx.arc(6, -6, 3, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
 
@@ -642,7 +778,6 @@ function draw() {
     }
 }
 
-// ✅ FIXED: Created a unified runtime ticker loop so update and draw sync together beautifully
 function gameLoop() {
     update();
     draw();
@@ -650,3 +785,6 @@ function gameLoop() {
 }
 gameLoop();
 </script>
+
+</body>
+</html>
