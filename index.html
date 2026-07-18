@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="canonical" href="https://web-games-mpgz.vercel.app/index.html">
+    <!-- ⚡ Dynamic canonical structure works across both preview and production links -->
+    <link rel="canonical" href=".">
     <title>Shivam JCOB: Banana Pursuit - Intro Fight</title>
     
     <!-- Mandatory AMP Core JS Library -->
@@ -76,12 +77,12 @@
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
-            padding: 8vh 0; /* Keeps clear spacing from edges */
+            padding: 8vh 0; 
             pointer-events: none;
-            animation: exitStage 1s steps(1) 6s forwards;
+            /* ⚡ FIXED: Uses visibility:hidden inside keyframes instead of display:none to stay fully AMP valid */
+            animation: exitStage 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53) 6s forwards;
         }
 
-        /* Safe Top Zone for Title & Queen */
         .title-zone {
             display: flex;
             flex-direction: column;
@@ -100,7 +101,7 @@
 
         .title-card {
             opacity: 0;
-            animation: titleReveal 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 4.2s forwards;
+            animation: titleReveal 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1s forwards;
         }
         .title-main {
             font-size: 3rem;
@@ -120,11 +121,10 @@
             margin-top: 5px;
         }
 
-        /* Safe Isolated Bottom Zone for Fighting Ring */
         .fight-ring {
             position: relative;
             width: 100%;
-            height: 200px; /* Locked height prevents drifting into text */
+            height: 200px;
             margin-bottom: 5vh;
         }
 
@@ -135,7 +135,6 @@
             text-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
 
-        /* Shivam (Black Gorilla) */
         .shivam {
             left: 15%;
             animation: 
@@ -143,7 +142,6 @@
                 shivamFightSequence 4s linear 1.5s forwards;
         }
 
-        /* Orange Ape */
         .ape {
             right: 15%;
             transform: scaleX(-1);
@@ -152,7 +150,6 @@
                 apeFightSequence 4s linear 1.5s forwards;
         }
 
-        /* Hit FX Sparks (Anchored strictly inside combat zone) */
         .fx {
             position: absolute;
             font-size: 50px;
@@ -165,13 +162,19 @@
            KEYFRAMES
            ========================================= */
         @keyframes fadeInContainer { to { opacity: 1; } }
-        @keyframes exitStage { to { transform: translateY(-100%); display: none; } }
+        
+        /* Slide out smoothly upward and toggle off visibility safely */
+        @keyframes exitStage { 
+            0% { transform: translateY(0); opacity: 1; }
+            99% { transform: translateY(-100%); opacity: 0; }
+            100% { transform: translateY(-100%); opacity: 0; visibility: hidden; } 
+        }
+        
         @keyframes queenPulse { 
             0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px #ff4e50); }
             50% { transform: scale(1.1); filter: drop-shadow(0 0 35px #ff4e50); }
         }
 
-        /* Entry Paths */
         @keyframes shivamEntry {
             0% { transform: translateX(-200px) rotate(-20deg); opacity: 0; }
             100% { transform: translateX(0) rotate(0deg); opacity: 1; }
@@ -181,7 +184,6 @@
             100% { transform: translateX(0) scaleX(-1) rotate(0deg); opacity: 1; }
         }
 
-        /* Combat Sequences */
         @keyframes shivamFightSequence {
             0% { left: 15%; }
             10% { left: 20%; }
@@ -207,7 +209,6 @@
             100% { right: -250px; opacity: 0; }
         }
 
-        /* Clashed Hit FX Location */
         @keyframes fxSequence {
             0%, 19% { opacity: 0; left: 47%; transform: scale(0); }
             20% { opacity: 1; left: 47%; transform: scale(1.2); }
@@ -215,7 +216,6 @@
             100% { opacity: 0; }
         }
 
-        /* Title Reveal */
         @keyframes titleReveal {
             0% { opacity: 0; transform: translateY(-20px); filter: blur(5px); }
             100% { opacity: 1; transform: translateY(0); filter: blur(0); }
@@ -226,7 +226,6 @@
 
     <!-- Artistic Intro Layer -->
     <div class="intro-stage">
-        <!-- Top Container: Separates Crown and Title from Fighters -->
         <div class="title-zone">
             <div class="queen-icon">💖</div>
             <div class="title-card">
@@ -235,7 +234,6 @@
             </div>
         </div>
 
-        <!-- Bottom Container: Isolated Combat Arena -->
         <div class="fight-ring">
             <div class="fighter shivam">🦍</div> 
             <div class="fighter ape">🦧</div>   
@@ -246,11 +244,12 @@
     <!-- Main Game Container -->
     <div class="container">
         <div class="game-wrapper">
+            <!-- ⚡ FIXED: Uses secure relative paths to pass local and hosted browser origin standards -->
             <amp-iframe width="900" height="450"
                 sandbox="allow-scripts allow-forms allow-popups"
                 layout="responsive"
                 frameborder="0"
-                src="https://web-games-mpgz.vercel.app/game-engine.html">
+                src="./game-engine.html">
                 <div placeholder class="loading-placeholder" style="background:#141226;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
                     🎬 LOADING BROWSER ENGINE...
                 </div>
