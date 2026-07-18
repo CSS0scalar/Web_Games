@@ -36,7 +36,6 @@
             height: 450px;
         }
 
-        /* The game screen sits on top of the menu screen */
         #gameCanvas {
             z-index: 1;
         }
@@ -45,7 +44,6 @@
             z-index: 0;
         }
 
-        /* UI Overlays */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -118,672 +116,675 @@
 <body>
 
     <div id="game-container">
-        <!-- The Start Screen Menu Layer -->
         <div id="start-overlay">
-            <h1 style="margin-bottom: 20px; font-weight: 900; letter-spacing: 2px; color: #fff;">SHIVAM JCOB: RIZZ RUN</h1>
-            <button id="start-button" onclick="startGameStory()">START ADVENTURE</button>
+            <h1 style="margin-bottom: 20px; font-weight: 900; letter-spacing: 2px; color: #fff; font-family: sans-serif;">SHIVAM JCOB: RIZZ RUN</h1>
+            <button id="start-button">START ADVENTURE</button>
         </div>
 
-        <!-- Gameplay HUD Head-Up Display -->
         <div id="ui-layer">
             <div id="score-box" class="ui-box">SCORE: 0</div>
             <div id="rizz-status" class="ui-box">TAP START TO PLAY</div>
         </div>
 
-        <!-- Two Canvas System -->
         <canvas id="animeMenuCanvas" width="800" height="450"></canvas>
         <canvas id="gameCanvas" width="800" height="450"></canvas>
     </div>
 
 <script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const menuCanvas = document.getElementById("animeMenuCanvas");
-const mctx = menuCanvas.getContext("2d");
+// Safely encapsulate implementation after document engine clears completely
+window.onload = function() {
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const menuCanvas = document.getElementById("animeMenuCanvas");
+    const mctx = menuCanvas.getContext("2d");
 
-const GROUND_Y = 360;
-let score = 0;
-let gameSpeed = 6.5;
-let isGameOver = false;
-let gameOverTimer = 0; 
-let animationFrameCount = 0;
-let gameState = "MENU"; 
-let introTimer = 0;
-let slowTimer = 0;
+    const GROUND_Y = 360;
+    let score = 0;
+    let gameSpeed = 6.5;
+    let isGameOver = false;
+    let gameOverTimer = 0; 
+    let animationFrameCount = 0;
+    let gameState = "MENU"; 
+    let introTimer = 0;
+    let slowTimer = 0;
 
-const player = {
-    x: 120,
-    y: GROUND_Y,
-    width: 60,
-    height: 80,
-    vy: 0,
-    gravity: 0.7,
-    jumpForce: -15.5,
-    isGrounded: true,
-    tag: "SHIVAM JCOB",
-    rotation: 0
-};
+    const player = {
+        x: 120,
+        y: GROUND_Y,
+        width: 60,
+        height: 80,
+        vy: 0,
+        gravity: 0.7,
+        jumpForce: -15.5,
+        isGrounded: true,
+        tag: "SHIVAM JCOB",
+        rotation: 0
+    };
 
-const femaleApe = {
-    x: 750,
-    y: 110,
-    width: 70,
-    height: 90,
-    targetY: 110,
-    animationState: "idle"
-};
+    const femaleApe = {
+        x: 750,
+        y: 110,
+        width: 70,
+        height: 90,
+        targetY: 110,
+        animationState: "idle"
+    };
 
-const bossConfig = {
-    active: false,
-    attackTimer: 0,
-    beamActive: false,
-    beamWarning: 0,
-    beamY: GROUND_Y - 20
-};
+    const bossConfig = {
+        active: false,
+        attackTimer: 0,
+        beamActive: false,
+        beamWarning: 0,
+        beamY: GROUND_Y - 20
+    };
 
-const cutsceneActors = {
-    shivam: { x: -100, y: GROUND_Y, item: "banana" },
-    orangeApe: { x: 340, y: -100, hasBanana: false }
-};
+    const cutsceneActors = {
+        shivam: { x: -100, y: GROUND_Y, item: "banana" },
+        orangeApe: { x: 340, y: -100, hasBanana: false }
+    };
 
-const endingActors = {
-    orangeApeX: 950,
-    orangeApeY: -100,
-    isKissing: false,
-    hasBanana: true,
-    bananaThrown: false,
-    bananaX: 0,
-    bananaY: 0,
-    bananaVy: -8,
-    bananaVx: -10,
-    bananaRot: 0
-};
+    const endingActors = {
+        orangeApeX: 950,
+        orangeApeY: -100,
+        isKissing: false,
+        hasBanana: true,
+        bananaThrown: false,
+        bananaX: 0,
+        bananaY: 0,
+        bananaVy: -8,
+        bananaVx: -10,
+        bananaRot: 0
+    };
 
-let obstacles = [];
-let items = []; 
-let platforms = []; 
-let particles = [];
-let rizzTimer = 0;
+    let obstacles = [];
+    let items = []; 
+    let platforms = []; 
+    let particles = [];
+    let rizzTimer = 0;
+    let menuFrame = 0;
 
-let menuFrame = 0;
-function drawDistantAnimeMenu() {
-    if (gameState !== "MENU") return;
-    menuFrame++;
+    // Direct Event Binding for Production environments
+    document.getElementById("start-button").addEventListener("click", function() {
+        document.getElementById("start-overlay").style.opacity = "0";
+        setTimeout(() => { document.getElementById("start-overlay").style.display = "none"; }, 400);
+        gameState = "INTRO";
+    });
 
-    let cycleLength = 360;
-    let localFrame = menuFrame % cycleLength;
+    function drawDistantAnimeMenu() {
+        if (gameState !== "MENU") return;
+        menuFrame++;
 
-    let skyGrad = mctx.createLinearGradient(0, 0, 0, menuCanvas.height);
-    skyGrad.addColorStop(0, "#7dd3fc");  
-    skyGrad.addColorStop(0.5, "#bae6fd");
-    skyGrad.addColorStop(0.8, "#fed7aa"); 
-    skyGrad.addColorStop(1, "#fef08a");
-    mctx.fillStyle = skyGrad;
-    mctx.fillRect(0, 0, menuCanvas.width, menuCanvas.height);
+        let cycleLength = 360;
+        let localFrame = menuFrame % cycleLength;
 
-    mctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-    function drawCloud(cx, cy, scale) {
-        mctx.beginPath(); mctx.arc(cx, cy, 30*scale, 0, Math.PI*2); mctx.arc(cx + 25*scale, cy - 10*scale, 25*scale, 0, Math.PI*2); mctx.arc(cx + 50*scale, cy, 20*scale, 0, Math.PI*2); mctx.fill();
-    }
-    drawCloud(180 + Math.sin(menuFrame*0.002)*15, 80, 1.1);
-    drawCloud(620 - Math.sin(menuFrame*0.0015)*15, 110, 0.9);
+        let skyGrad = mctx.createLinearGradient(0, 0, 0, menuCanvas.height);
+        skyGrad.addColorStop(0, "#7dd3fc");  
+        skyGrad.addColorStop(0.5, "#bae6fd");
+        skyGrad.addColorStop(0.8, "#fed7aa"); 
+        skyGrad.addColorStop(1, "#fef08a");
+        mctx.fillStyle = skyGrad;
+        mctx.fillRect(0, 0, menuCanvas.width, menuCanvas.height);
 
-    mctx.fillStyle = "#a7f3d0";
-    mctx.beginPath(); mctx.moveTo(-50, menuCanvas.height); mctx.lineTo(200, 250); mctx.lineTo(480, 340); mctx.lineTo(720, 220); mctx.lineTo(1000, menuCanvas.height); mctx.fill();
-    mctx.fillStyle = "#6ee7b7";
-    mctx.beginPath(); mctx.moveTo(-50, menuCanvas.height); mctx.lineTo(120, 300); mctx.lineTo(380, 270); mctx.lineTo(800, 270); mctx.lineTo(1000, menuCanvas.height); mctx.fill();
-
-    mctx.fillStyle = "#047857";
-    mctx.fillRect(0, GROUND_Y, menuCanvas.width, menuCanvas.height - GROUND_Y);
-
-    mctx.fillStyle = "#78350f";
-    mctx.beginPath(); mctx.moveTo(600, GROUND_Y); mctx.quadraticCurveTo(620, 240, 650, 100); mctx.lineTo(680, 100); mctx.quadraticCurveTo(650, 240, 640, GROUND_Y); mctx.fill();
-
-    let shivamX = -50; let orangeX = 540; let bananaAttachedTo = "ground"; let orangeState = "sleeping"; let shivamAction = "sneak";
-
-    if (localFrame < 140) {
-        shivamX = -50 + (localFrame / 140) * 550; shivamAction = "sneak"; orangeState = "sleeping"; bananaAttachedTo = "ground";
-    } else if (localFrame >= 140 && localFrame < 170) {
-        shivamX = 500; shivamAction = "grab"; orangeState = "sleeping"; bananaAttachedTo = "shivam";
-    } else if (localFrame >= 170 && localFrame < 230) {
-        shivamX = 500 - ((localFrame - 170) / 60) * 650; shivamAction = "run"; bananaAttachedTo = "shivam";
-        if (localFrame < 195) { orangeState = "waking"; } else { orangeState = "chasing"; orangeX = 540 - ((localFrame - 195) / 35) * 650; }
-    } else {
-        shivamX = -100; orangeX = -100; bananaAttachedTo = "gone"; orangeState = "hidden";
-    }
-
-    if (orangeState !== "hidden") {
-        mctx.save();
-        let bounce = (orangeState === "chasing") ? Math.sin(menuFrame * 0.25) * 5 : 0;
-        mctx.translate(orangeX, GROUND_Y - 35 + bounce);
-        mctx.fillStyle = "#d97706";
-        if (orangeState === "sleeping") {
-            mctx.beginPath(); mctx.ellipse(0, 10, 22, 16, 0, 0, Math.PI*2); mctx.fill();
-            mctx.beginPath(); mctx.arc(10, -8, 11, 0, Math.PI*2); mctx.fill();
-            mctx.fillStyle = "rgba(255, 255, 255, 0.75)"; mctx.font = "bold 13px monospace";
-            let zSize = (menuFrame % 40) * 0.3; mctx.fillText("z", 16 + zSize*0.4, -20 - zSize);
-        } else if (orangeState === "waking") {
-            mctx.beginPath(); mctx.ellipse(0, 5, 18, 20, 0, 0, Math.PI*2); mctx.fill();
-            mctx.beginPath(); mctx.arc(0, -16, 12, 0, Math.PI*2); mctx.fill();
-            mctx.fillStyle = "#f43f5e"; mctx.font = "bold 20px sans-serif"; mctx.fillText("!", -4, -34);
-        } else if (orangeState === "chasing") {
-            mctx.beginPath(); mctx.ellipse(0, 6, 22, 15, -0.2, 0, Math.PI*2); mctx.fill();
-            mctx.beginPath(); mctx.arc(-10, -10, 11, 0, Math.PI*2); mctx.fill();
-            mctx.strokeStyle = "#d97706"; mctx.lineWidth = 6; mctx.beginPath(); mctx.moveTo(-15, 5); mctx.lineTo(-32, -4); mctx.stroke();
+        mctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        function drawCloud(cx, cy, scale) {
+            mctx.beginPath(); mctx.arc(cx, cy, 30*scale, 0, Math.PI*2); mctx.arc(cx + 25*scale, cy - 10*scale, 25*scale, 0, Math.PI*2); mctx.arc(cx + 50*scale, cy, 20*scale, 0, Math.PI*2); mctx.fill();
         }
-        mctx.restore();
+        drawCloud(180 + Math.sin(menuFrame*0.002)*15, 80, 1.1);
+        drawCloud(620 - Math.sin(menuFrame*0.0015)*15, 110, 0.9);
+
+        mctx.fillStyle = "#a7f3d0";
+        mctx.beginPath(); mctx.moveTo(-50, menuCanvas.height); mctx.lineTo(200, 250); mctx.lineTo(480, 340); mctx.lineTo(720, 220); mctx.lineTo(1000, menuCanvas.height); mctx.fill();
+        mctx.fillStyle = "#6ee7b7";
+        mctx.beginPath(); mctx.moveTo(-50, menuCanvas.height); mctx.lineTo(120, 300); mctx.lineTo(380, 270); mctx.lineTo(800, 270); mctx.lineTo(1000, menuCanvas.height); mctx.fill();
+
+        mctx.fillStyle = "#047857";
+        mctx.fillRect(0, GROUND_Y, menuCanvas.width, menuCanvas.height - GROUND_Y);
+
+        mctx.fillStyle = "#78350f";
+        mctx.beginPath(); mctx.moveTo(600, GROUND_Y); mctx.quadraticCurveTo(620, 240, 650, 100); mctx.lineTo(680, 100); mctx.quadraticCurveTo(650, 240, 640, GROUND_Y); mctx.fill();
+
+        let shivamX = -50; let orangeX = 540; let bananaAttachedTo = "ground"; let orangeState = "sleeping"; let shivamAction = "sneak";
+
+        if (localFrame < 140) {
+            shivamX = -50 + (localFrame / 140) * 550; shivamAction = "sneak"; orangeState = "sleeping"; bananaAttachedTo = "ground";
+        } else if (localFrame >= 140 && localFrame < 170) {
+            shivamX = 500; shivamAction = "grab"; orangeState = "sleeping"; bananaAttachedTo = "shivam";
+        } else if (localFrame >= 170 && localFrame < 230) {
+            shivamX = 500 - ((localFrame - 170) / 60) * 650; shivamAction = "run"; bananaAttachedTo = "shivam";
+            if (localFrame < 195) { orangeState = "waking"; } else { orangeState = "chasing"; orangeX = 540 - ((localFrame - 195) / 35) * 650; }
+        } else {
+            shivamX = -100; orangeX = -100; bananaAttachedTo = "gone"; orangeState = "hidden";
+        }
+
+        if (orangeState !== "hidden") {
+            mctx.save();
+            let bounce = (orangeState === "chasing") ? Math.sin(menuFrame * 0.25) * 5 : 0;
+            mctx.translate(orangeX, GROUND_Y - 35 + bounce);
+            mctx.fillStyle = "#d97706";
+            if (orangeState === "sleeping") {
+                mctx.beginPath(); mctx.ellipse(0, 10, 22, 16, 0, 0, Math.PI*2); mctx.fill();
+                mctx.beginPath(); mctx.arc(10, -8, 11, 0, Math.PI*2); mctx.fill();
+                mctx.fillStyle = "rgba(255, 255, 255, 0.75)"; mctx.font = "bold 13px monospace";
+                let zSize = (menuFrame % 40) * 0.3; mctx.fillText("z", 16 + zSize*0.4, -20 - zSize);
+            } else if (orangeState === "waking") {
+                mctx.beginPath(); mctx.ellipse(0, 5, 18, 20, 0, 0, Math.PI*2); mctx.fill();
+                mctx.beginPath(); mctx.arc(0, -16, 12, 0, Math.PI*2); mctx.fill();
+                mctx.fillStyle = "#f43f5e"; mctx.font = "bold 20px sans-serif"; mctx.fillText("!", -4, -34);
+            } else if (orangeState === "chasing") {
+                mctx.beginPath(); mctx.ellipse(0, 6, 22, 15, -0.2, 0, Math.PI*2); mctx.fill();
+                mctx.beginPath(); mctx.arc(-10, -10, 11, 0, Math.PI*2); mctx.fill();
+                mctx.strokeStyle = "#d97706"; mctx.lineWidth = 6; mctx.beginPath(); mctx.moveTo(-15, 5); mctx.lineTo(-32, -4); mctx.stroke();
+            }
+            mctx.restore();
+        }
+
+        if (shivamX > -80 && shivamX < 950) {
+            mctx.save();
+            let sBounce = (shivamAction === "run") ? Math.sin(menuFrame * 0.3) * 6 : 0;
+            mctx.translate(shivamX, GROUND_Y - 40 + sBounce);
+            mctx.fillStyle = "#0c0a12";
+            if (shivamAction === "sneak" || shivamAction === "grab") {
+                mctx.beginPath(); mctx.ellipse(0, 15, 24, 13, 0.1, 0, Math.PI*2); mctx.fill();
+                mctx.beginPath(); mctx.arc(14, 2, 11, 0, Math.PI*2); mctx.fill();
+                mctx.strokeStyle = "#0c0a12"; mctx.lineWidth = 5; mctx.lineCap = "round"; mctx.beginPath(); mctx.moveTo(8, 10); mctx.lineTo(shivamAction === "grab" ? 34 : 26, 16); mctx.stroke();
+            } else if (shivamAction === "run") {
+                mctx.beginPath(); mctx.ellipse(0, 8, 22, 16, 0.3, 0, Math.PI*2); mctx.fill();
+                mctx.beginPath(); mctx.arc(-12, -8, 12, 0, Math.PI*2); mctx.fill();
+            }
+            mctx.restore();
+        }
+
+        if (bananaAttachedTo === "ground") {
+            mctx.strokeStyle = "#fbbf24"; mctx.lineWidth = 4; mctx.lineCap = "round"; mctx.beginPath(); mctx.arc(516, GROUND_Y - 16, 6, 0.4, Math.PI - 0.4); mctx.stroke();
+        } else if (bananaAttachedTo === "shivam") {
+            mctx.strokeStyle = "#fbbf24"; mctx.lineWidth = 4; mctx.lineCap = "round"; mctx.beginPath(); mctx.arc(shivamX + 24, GROUND_Y - 26 + (shivamAction === "run" ? Math.sin(menuFrame * 0.3)*6 : 0), 6, 0.4, Math.PI - 0.4); mctx.stroke();
+        }
+
+        requestAnimationFrame(drawDistantAnimeMenu);
     }
 
-    if (shivamX > -80 && shivamX < 950) {
-        mctx.save();
-        let sBounce = (shivamAction === "run") ? Math.sin(menuFrame * 0.3) * 6 : 0;
-        mctx.translate(shivamX, GROUND_Y - 40 + sBounce);
-        mctx.fillStyle = "#0c0a12";
-        if (shivamAction === "sneak" || shivamAction === "grab") {
-            mctx.beginPath(); mctx.ellipse(0, 15, 24, 13, 0.1, 0, Math.PI*2); mctx.fill();
-            mctx.beginPath(); mctx.arc(14, 2, 11, 0, Math.PI*2); mctx.fill();
-            mctx.strokeStyle = "#0c0a12"; mctx.lineWidth = 5; mctx.lineCap = "round"; mctx.beginPath(); mctx.moveTo(8, 10); mctx.lineTo(shivamAction === "grab" ? 34 : 26, 16); mctx.stroke();
-        } else if (shivamAction === "run") {
-            mctx.beginPath(); mctx.ellipse(0, 8, 22, 16, 0.3, 0, Math.PI*2); mctx.fill();
-            mctx.beginPath(); mctx.arc(-12, -8, 12, 0, Math.PI*2); mctx.fill();
-        }
-        mctx.restore();
-    }
+    // Call menu loop immediately once safe
+    drawDistantAnimeMenu();
 
-    if (bananaAttachedTo === "ground") {
-        mctx.strokeStyle = "#fbbf24"; mctx.lineWidth = 4; mctx.lineCap = "round"; mctx.beginPath(); mctx.arc(516, GROUND_Y - 16, 6, 0.4, Math.PI - 0.4); mctx.stroke();
-    } else if (bananaAttachedTo === "shivam") {
-        mctx.strokeStyle = "#fbbf24"; mctx.lineWidth = 4; mctx.lineCap = "round"; mctx.beginPath(); mctx.arc(shivamX + 24, GROUND_Y - 26 + (shivamAction === "run" ? Math.sin(menuFrame * 0.3)*6 : 0), 6, 0.4, Math.PI - 0.4); mctx.stroke();
-    }
-
-    requestAnimationFrame(drawDistantAnimeMenu);
-}
-drawDistantAnimeMenu();
-
-function startGameStory() {
-    document.getElementById("start-overlay").style.opacity = "0";
-    setTimeout(() => { document.getElementById("start-overlay").style.display = "none"; }, 400);
-    gameState = "INTRO";
-}
-
-window.addEventListener('keydown', e => {
-    if (gameState !== "PLAYING" && !isGameOver) return;
-    if ((e.key === ' ' || e.key === 'ArrowUp')) {
-        if (!isGameOver && player.isGrounded) {
-            player.vy = player.jumpForce;
-            player.isGrounded = false;
-            createSoftDust(player.x + 25, GROUND_Y, 6, "rgba(255,255,255,0.2)");
-        } else if (isGameOver && gameOverTimer > 150) {
-            resetGame();
-        }
-    }
-});
-
-function resetGame() {
-    score = 0; gameSpeed = 6.5; isGameOver = false; gameOverTimer = 0; rizzTimer = 0; slowTimer = 0;
-    player.y = GROUND_Y; player.vy = 0; player.isGrounded = true; player.rotation = 0; player.x = 120;
-    obstacles = []; items = []; platforms = []; particles = [];
-    femaleApe.x = 750; femaleApe.y = 110; femaleApe.targetY = 110; femaleApe.animationState = "idle";
-    bossConfig.active = false; bossConfig.attackTimer = 0; bossConfig.beamActive = false; bossConfig.beamWarning = 0;
-    endingActors.orangeApeX = 950; endingActors.orangeApeY = -100; endingActors.isKissing = false;
-    endingActors.hasBanana = true; endingActors.bananaThrown = false; endingActors.bananaVy = -8; endingActors.bananaVx = -10; endingActors.bananaRot = 0;
-    gameState = "PLAYING";
-}
-
-function spawnEntities() {
-    if (!bossConfig.active) {
-        if (animationFrameCount % 110 === 0 && Math.random() > 0.25) {
-            obstacles.push({ x: canvas.width + 60, y: GROUND_Y - 32, width: 40, height: 32 });
-        }
-        if (animationFrameCount % 160 === 0) {
-            items.push({ x: canvas.width + 60, y: GROUND_Y - 110 - Math.random() * 50, type: "banana", pulse: 0 });
-        }
-    } else {
-        bossConfig.attackTimer++;
-        if (bossConfig.attackTimer % 90 === 0) {
-            let randType = Math.random();
-            if (randType < 0.4) {
-                items.push({ x: canvas.width + 20, y: GROUND_Y - 60 - Math.random() * 120, type: "heart_charm", pulse: 0, vy: Math.sin(animationFrameCount)*1.5 });
-            } else if (randType < 0.7) {
-                items.push({ x: canvas.width + 20, y: GROUND_Y - 40 - Math.random() * 60, type: "fake_banana", pulse: 0 });
-            } else {
-                items.push({ x: canvas.width + 20, y: GROUND_Y - 120, type: "banana", pulse: 0 });
+    window.addEventListener('keydown', e => {
+        if (gameState !== "PLAYING" && !isGameOver) return;
+        if ((e.key === ' ' || e.key === 'ArrowUp')) {
+            if (!isGameOver && player.isGrounded) {
+                player.vy = player.jumpForce;
+                player.isGrounded = false;
+                createSoftDust(player.x + 25, GROUND_Y, 6, "rgba(255,255,255,0.2)");
+            } else if (isGameOver && gameOverTimer > 150) {
+                resetGame();
             }
         }
-        if (bossConfig.attackTimer % 170 === 0) {
-            platforms.push({ x: canvas.width + 40, y: GROUND_Y - 90, width: 120, height: 15 });
-        }
-        if (bossConfig.attackTimer % 320 === 0) {
-            bossConfig.beamWarning = 60; 
-        }
-    }
-}
+    });
 
-function createSoftDust(x, y, count, color) {
-    for (let i = 0; i < count; i++) {
-        particles.push({
-            x: x, y: y,
-            vx: (Math.random() - 0.5) * 4 - (gameState === "PLAYING" ? gameSpeed * 0.2 : 0),
-            vy: -Math.random() * 2 - 1,
-            size: Math.random() * 8 + 4, alpha: 0.5, color: color
-        });
+    function resetGame() {
+        score = 0; gameSpeed = 6.5; isGameOver = false; gameOverTimer = 0; rizzTimer = 0; slowTimer = 0;
+        player.y = GROUND_Y; player.vy = 0; player.isGrounded = true; player.rotation = 0; player.x = 120;
+        obstacles = []; items = []; platforms = []; particles = [];
+        femaleApe.x = 750; femaleApe.y = 110; femaleApe.targetY = 110; femaleApe.animationState = "idle";
+        bossConfig.active = false; bossConfig.attackTimer = 0; bossConfig.beamActive = false; bossConfig.beamWarning = 0;
+        endingActors.orangeApeX = 950; endingActors.orangeApeY = -100; endingActors.isKissing = false;
+        endingActors.hasBanana = true; endingActors.bananaThrown = false; endingActors.bananaVy = -8; endingActors.bananaVx = -10; endingActors.bananaRot = 0;
+        gameState = "PLAYING";
     }
-}
 
-function triggerRizzEffect() {
-    rizzTimer = 180; score += 500;
-    for(let i=0; i<20; i++) {
-        particles.push({
-            x: femaleApe.x + 25, y: femaleApe.y + 20,
-            vx: -Math.random() * 4 - 2, vy: (Math.random() - 0.5) * 4,
-            size: Math.random() * 5 + 3, alpha: 1, color: "#f43f5e"
-        });
-    }
-}
-
-function updateIntro() {
-    introTimer++;
-    if (introTimer < 100) { cutsceneActors.shivam.x += 4.5; } 
-    else if (introTimer >= 100 && introTimer < 170) { cutsceneActors.shivam.item = "offered"; } 
-    else if (introTimer >= 170 && introTimer < 220) { if (cutsceneActors.orangeApe.y < GROUND_Y) { cutsceneActors.orangeApe.y += 10; } } 
-    else if (introTimer >= 220 && introTimer < 280) { cutsceneActors.shivam.item = "none"; cutsceneActors.orangeApe.hasBanana = true; cutsceneActors.orangeApe.x += 8.5; } 
-    else if (introTimer >= 280 && introTimer < 350) { cutsceneActors.shivam.x += 9; } 
-    else if (introTimer >= 350) { gameState = "PLAYING"; }
-}
-
-function triggerGameOver() {
-    isGameOver = true;
-    document.getElementById("rizz-status").innerText = "BETRAYED! 💔";
-}
-
-function updateEndingCinematic() {
-    gameOverTimer++;
-    if (gameOverTimer < 40) {
-        player.x -= 1.5;
-    }
-    if (gameOverTimer >= 40 && gameOverTimer < 100) {
-        let targetApeX = femaleApe.x - 65;
-        let targetApeY = femaleApe.y + 20;
-        endingActors.orangeApeX += (targetApeX - endingActors.orangeApeX) * 0.1;
-        endingActors.orangeApeY += (targetApeY - endingActors.orangeApeY) * 0.1;
-    }
-    if (gameOverTimer === 100) {
-        endingActors.hasBanana = false;
-        endingActors.bananaThrown = true;
-        endingActors.bananaX = endingActors.orangeApeX;
-        endingActors.bananaY = endingActors.orangeApeY + 20;
-    }
-    if (endingActors.bananaThrown) {
-        endingActors.bananaX += endingActors.bananaVx;
-        endingActors.bananaVy += 0.4;
-        endingActors.bananaY += endingActors.bananaVy;
-        endingActors.bananaRot -= 0.25;
-
-        if (endingActors.bananaX <= player.x + player.width && endingActors.bananaX >= player.x - 20 &&
-            endingActors.bananaY >= player.y - player.height && endingActors.bananaY <= player.y + 20) {
-            endingActors.bananaThrown = false;
-            createSoftDust(player.x + 30, player.y - 40, 15, "#fbbf24");
-            player.vy = -8;
-        }
-    }
-    if (gameOverTimer > 105 && !endingActors.bananaThrown) {
-        player.rotation += 0.12;
-        if (player.y < GROUND_Y || player.vy !== 0) {
-            player.vy += 0.6;
-            player.y += player.vy;
-            if (player.y >= GROUND_Y) {
-                player.y = GROUND_Y;
-                player.vy = 0;
+    function spawnEntities() {
+        if (!bossConfig.active) {
+            if (animationFrameCount % 110 === 0 && Math.random() > 0.25) {
+                obstacles.push({ x: canvas.width + 60, y: GROUND_Y - 32, width: 40, height: 32 });
+            }
+            if (animationFrameCount % 160 === 0) {
+                items.push({ x: canvas.width + 60, y: GROUND_Y - 110 - Math.random() * 50, type: "banana", pulse: 0 });
+            }
+        } else {
+            bossConfig.attackTimer++;
+            if (bossConfig.attackTimer % 90 === 0) {
+                let randType = Math.random();
+                if (randType < 0.4) {
+                    items.push({ x: canvas.width + 20, y: GROUND_Y - 60 - Math.random() * 120, type: "heart_charm", pulse: 0, vy: Math.sin(animationFrameCount)*1.5 });
+                } else if (randType < 0.7) {
+                    items.push({ x: canvas.width + 20, y: GROUND_Y - 40 - Math.random() * 60, type: "fake_banana", pulse: 0 });
+                } else {
+                    items.push({ x: canvas.width + 20, y: GROUND_Y - 120, type: "banana", pulse: 0 });
+                }
+            }
+            if (bossConfig.attackTimer % 170 === 0) {
+                platforms.push({ x: canvas.width + 40, y: GROUND_Y - 90, width: 120, height: 15 });
+            }
+            if (bossConfig.attackTimer % 320 === 0) {
+                bossConfig.beamWarning = 60; 
             }
         }
     }
-    if (gameOverTimer >= 115) {
-        endingActors.isKissing = true;
-        femaleApe.animationState = "kissing";
-        
-        if (gameOverTimer % 8 === 0 && gameOverTimer < 210) {
+
+    function createSoftDust(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
             particles.push({
-                x: femaleApe.x - 10, y: femaleApe.y + 20,
-                vx: (Math.random() - 0.5) * 3, vy: -Math.random() * 3 - 1,
-                size: Math.random() * 6 + 4, alpha: 1, color: "#f43f5e"
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 4 - (gameState === "PLAYING" ? gameSpeed * 0.2 : 0),
+                vy: -Math.random() * 2 - 1,
+                size: Math.random() * 8 + 4, alpha: 0.5, color: color
             });
         }
     }
-}
 
-function update() {
-    if (gameState === "MENU") return;
-    if (gameState === "INTRO") { updateIntro(); return; }
-    
-    if (isGameOver) { 
-        updateEndingCinematic(); 
+    function triggerRizzEffect() {
+        rizzTimer = 180; score += 500;
+        for(let i=0; i<20; i++) {
+            particles.push({
+                x: femaleApe.x + 25, y: femaleApe.y + 20,
+                vx: -Math.random() * 4 - 2, vy: (Math.random() - 0.5) * 4,
+                size: Math.random() * 5 + 3, alpha: 1, color: "#f43f5e"
+            });
+        }
+    }
+
+    function updateIntro() {
+        introTimer++;
+        if (introTimer < 100) { cutsceneActors.shivam.x += 4.5; } 
+        else if (introTimer >= 100 && introTimer < 170) { cutsceneActors.shivam.item = "offered"; } 
+        else if (introTimer >= 170 && introTimer < 220) { if (cutsceneActors.orangeApe.y < GROUND_Y) { cutsceneActors.orangeApe.y += 10; } } 
+        else if (introTimer >= 220 && introTimer < 280) { cutsceneActors.shivam.item = "none"; cutsceneActors.orangeApe.hasBanana = true; cutsceneActors.orangeApe.x += 8.5; } 
+        else if (introTimer >= 280 && introTimer < 350) { cutsceneActors.shivam.x += 9; } 
+        else if (introTimer >= 350) { gameState = "PLAYING"; }
+    }
+
+    function triggerGameOver() {
+        isGameOver = true;
+        document.getElementById("rizz-status").innerText = "BETRAYED! 💔";
+    }
+
+    function updateEndingCinematic() {
+        gameOverTimer++;
+        if (gameOverTimer < 40) {
+            player.x -= 1.5;
+        }
+        if (gameOverTimer >= 40 && gameOverTimer < 100) {
+            let targetApeX = femaleApe.x - 65;
+            let targetApeY = femaleApe.y + 20;
+            endingActors.orangeApeX += (targetApeX - endingActors.orangeApeX) * 0.1;
+            endingActors.orangeApeY += (targetApeY - endingActors.orangeApeY) * 0.1;
+        }
+        if (gameOverTimer === 100) {
+            endingActors.hasBanana = false;
+            endingActors.bananaThrown = true;
+            endingActors.bananaX = endingActors.orangeApeX;
+            endingActors.bananaY = endingActors.orangeApeY + 20;
+        }
+        if (endingActors.bananaThrown) {
+            endingActors.bananaX += endingActors.bananaVx;
+            endingActors.bananaVy += 0.4;
+            endingActors.bananaY += endingActors.bananaVy;
+            endingActors.bananaRot -= 0.25;
+
+            if (endingActors.bananaX <= player.x + player.width && endingActors.bananaX >= player.x - 20 &&
+                endingActors.bananaY >= player.y - player.height && endingActors.bananaY <= player.y + 20) {
+                endingActors.bananaThrown = false;
+                createSoftDust(player.x + 30, player.y - 40, 15, "#fbbf24");
+                player.vy = -8;
+            }
+        }
+        if (gameOverTimer > 105 && !endingActors.bananaThrown) {
+            player.rotation += 0.12;
+            if (player.y < GROUND_Y || player.vy !== 0) {
+                player.vy += 0.6;
+                player.y += player.vy;
+                if (player.y >= GROUND_Y) {
+                    player.y = GROUND_Y;
+                    player.vy = 0;
+                }
+            }
+        }
+        if (gameOverTimer >= 115) {
+            endingActors.isKissing = true;
+            femaleApe.animationState = "kissing";
+            
+            if (gameOverTimer % 8 === 0 && gameOverTimer < 210) {
+                particles.push({
+                    x: femaleApe.x - 10, y: femaleApe.y + 20,
+                    vx: (Math.random() - 0.5) * 3, vy: -Math.random() * 3 - 1,
+                    size: Math.random() * 6 + 4, alpha: 1, color: "#f43f5e"
+                });
+            }
+        }
+    }
+
+    function update() {
+        if (gameState === "MENU") return;
+        if (gameState === "INTRO") { updateIntro(); return; }
+        
+        if (isGameOver) { 
+            updateEndingCinematic(); 
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.015;
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+            return; 
+        }
+
+        animationFrameCount++;
+        score += 2; 
+
+        if (score >= 10000 && !bossConfig.active) {
+            bossConfig.active = true;
+            femaleApe.targetY = GROUND_Y - 140; 
+            femaleApe.animationState = "boss";
+        }
+
+        let currentSpeed = gameSpeed;
+        if (slowTimer > 0) {
+            slowTimer--;
+            currentSpeed = gameSpeed * 0.45; 
+        }
+
+        player.vy += player.gravity;
+        player.y += player.vy;
+
+        let onPlatform = false;
+        platforms.forEach(plat => {
+            if (player.x + 20 < plat.x + plat.width &&
+                player.x + player.width - 20 > plat.x &&
+                player.y <= plat.y && player.y + player.vy >= plat.y) {
+                player.y = plat.y;
+                player.vy = 0;
+                player.isGrounded = true;
+                onPlatform = true;
+            }
+        });
+
+        if (!onPlatform && player.y >= GROUND_Y) {
+            player.y = GROUND_Y;
+            player.vy = 0;
+            player.isGrounded = true;
+        }
+
+        femaleApe.y += (femaleApe.targetY - femaleApe.y) * 0.04;
+        if (bossConfig.active) {
+            femaleApe.x = 640 + Math.sin(animationFrameCount * 0.03) * 60;
+        }
+
+        if (bossConfig.active) {
+            if (slowTimer > 0) document.getElementById("rizz-status").innerText = "CHARMED / SLOWED ✨😵";
+            else document.getElementById("rizz-status").innerText = "💖 BOSS: HEARTBREAKER QUEEN";
+        } else if (rizzTimer > 0) {
+            rizzTimer--;
+            femaleApe.animationState = "dancing";
+            currentSpeed = 11;
+            document.getElementById("rizz-status").innerText = "RIZZ OVERDRIVE 😍💘";
+        } else {
+            femaleApe.animationState = "idle";
+            gameSpeed = 6.5 + Math.floor(score / 2000) * 0.5;
+            document.getElementById("rizz-status").innerText = "PURSUING THIEF 🏃‍♂️";
+        }
+
+        spawnEntities();
+
+        if (bossConfig.beamWarning > 0) {
+            bossConfig.beamWarning--;
+            if (bossConfig.beamWarning === 0) {
+                bossConfig.beamActive = 45; 
+            }
+        }
+        if (bossConfig.beamActive > 0) {
+            bossConfig.beamActive--;
+            if (player.y + 5 >= bossConfig.beamY && player.y - player.height <= bossConfig.beamY + 25) {
+                triggerGameOver();
+            }
+        }
+
+        for (let i = platforms.length - 1; i >= 0; i--) {
+            platforms[i].x -= currentSpeed;
+            if (platforms[i].x < -150) platforms.splice(i, 1);
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let obs = obstacles[i];
+            obs.x -= currentSpeed;
+            if (player.x + 15 < obs.x + obs.width && player.x + player.width - 15 > obs.x && player.y - player.height < obs.y + obs.height && player.y > obs.y) {
+                triggerGameOver();
+            }
+            if (obs.x < -60) obstacles.splice(i, 1);
+        }
+
+        for (let i = items.length - 1; i >= 0; i--) {
+            let item = items[i];
+            item.x -= currentSpeed;
+            if (item.vy) item.y += item.vy; 
+            item.pulse += 0.08;
+
+            if (player.x < item.x + 35 && player.x + player.width > item.x && player.y - player.height < item.y + 35 && player.y > item.y) {
+                if (item.type === "banana") {
+                    triggerRizzEffect();
+                } else if (item.type === "fake_banana") {
+                    score = Math.max(0, score - 1000); 
+                    createSoftDust(item.x, item.y, 8, "#b91c1c");
+                } else if (item.type === "heart_charm") {
+                    slowTimer = 150; 
+                    createSoftDust(item.x, item.y, 12, "#f43f5e");
+                }
+                items.splice(i, 1);
+                continue;
+            }
+            if (item.x < -60) items.splice(i, 1);
+        }
+
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.015;
             if (p.alpha <= 0) particles.splice(i, 1);
         }
-        return; 
+
+        document.getElementById("score-box").innerText = `SCORE: ${score}`;
     }
 
-    animationFrameCount++;
-    score += 2; 
-
-    if (score >= 10000 && !bossConfig.active) {
-        bossConfig.active = true;
-        femaleApe.targetY = GROUND_Y - 140; 
-        femaleApe.animationState = "boss";
-    }
-
-    let currentSpeed = gameSpeed;
-    if (slowTimer > 0) {
-        slowTimer--;
-        currentSpeed = gameSpeed * 0.45; 
-    }
-
-    player.vy += player.gravity;
-    player.y += player.vy;
-
-    let onPlatform = false;
-    platforms.forEach(plat => {
-        if (player.x + 20 < plat.x + plat.width &&
-            player.x + player.width - 20 > plat.x &&
-            player.y <= plat.y && player.y + player.vy >= plat.y) {
-            player.y = plat.y;
-            player.vy = 0;
-            player.isGrounded = true;
-            onPlatform = true;
-        }
-    });
-
-    if (!onPlatform && player.y >= GROUND_Y) {
-        player.y = GROUND_Y;
-        player.vy = 0;
-        player.isGrounded = true;
-    }
-
-    femaleApe.y += (femaleApe.targetY - femaleApe.y) * 0.04;
-    if (bossConfig.active) {
-        femaleApe.x = 640 + Math.sin(animationFrameCount * 0.03) * 60;
-    }
-
-    if (bossConfig.active) {
-        if (slowTimer > 0) document.getElementById("rizz-status").innerText = "CHARMED / SLOWED ✨😵";
-        else document.getElementById("rizz-status").innerText = "💖 BOSS: HEARTBREAKER QUEEN";
-    } else if (rizzTimer > 0) {
-        rizzTimer--;
-        femaleApe.animationState = "dancing";
-        currentSpeed = 11;
-        document.getElementById("rizz-status").innerText = "RIZZ OVERDRIVE 😍💘";
-    } else {
-        femaleApe.animationState = "idle";
-        gameSpeed = 6.5 + Math.floor(score / 2000) * 0.5;
-        document.getElementById("rizz-status").innerText = "PURSUING THIEF 🏃‍♂️";
-    }
-
-    spawnEntities();
-
-    if (bossConfig.beamWarning > 0) {
-        bossConfig.beamWarning--;
-        if (bossConfig.beamWarning === 0) {
-            bossConfig.beamActive = 45; 
-        }
-    }
-    if (bossConfig.beamActive > 0) {
-        bossConfig.beamActive--;
-        if (player.y + 5 >= bossConfig.beamY && player.y - player.height <= bossConfig.beamY + 25) {
-            triggerGameOver();
-        }
-    }
-
-    for (let i = platforms.length - 1; i >= 0; i--) {
-        platforms[i].x -= currentSpeed;
-        if (platforms[i].x < -150) platforms.splice(i, 1);
-    }
-
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        let obs = obstacles[i];
-        obs.x -= currentSpeed;
-        if (player.x + 15 < obs.x + obs.width && player.x + player.width - 15 > obs.x && player.y - player.height < obs.y + obs.height && player.y > obs.y) {
-            triggerGameOver();
-        }
-        if (obs.x < -60) obstacles.splice(i, 1);
-    }
-
-    for (let i = items.length - 1; i >= 0; i--) {
-        let item = items[i];
-        item.x -= currentSpeed;
-        if (item.vy) item.y += item.vy; 
-        item.pulse += 0.08;
-
-        if (player.x < item.x + 35 && player.x + player.width > item.x && player.y - player.height < item.y + 35 && player.y > item.y) {
-            if (item.type === "banana") {
-                triggerRizzEffect();
-            } else if (item.type === "fake_banana") {
-                score = Math.max(0, score - 1000); 
-                createSoftDust(item.x, item.y, 8, "#b91c1c");
-            } else if (item.type === "heart_charm") {
-                slowTimer = 150; 
-                createSoftDust(item.x, item.y, 12, "#f43f5e");
-            }
-            items.splice(i, 1);
-            continue;
-        }
-        if (item.x < -60) items.splice(i, 1);
-    }
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.015;
-        if (p.alpha <= 0) particles.splice(i, 1);
-    }
-
-    document.getElementById("score-box").innerText = `SCORE: ${score}`;
-}
-
-function drawSmoothApe(x, y, mainColor, accentColor, isRunning, itemState = "none", angle = 0) {
-    ctx.save();
-    let bounce = isRunning ? Math.sin(Date.now() * 0.014) * 4 : 0;
-    let limbSwing = isRunning ? Math.sin(Date.now() * 0.014) * 12 : 0;
-    
-    ctx.translate(x + 25, y - 70 + bounce);
-    if(angle !== 0) ctx.rotate(angle);
-
-    ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-    ctx.beginPath(); ctx.ellipse(0, 70 - bounce, 22, 6, 0, 0, Math.PI * 2); ctx.fill();
-
-    ctx.fillStyle = mainColor;
-    ctx.beginPath(); ctx.arc(0, 25, 20, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = accentColor;
-    ctx.beginPath(); ctx.arc(0, 23, 11, 0, Math.PI * 2); ctx.fill();
-
-    ctx.strokeStyle = mainColor; ctx.lineWidth = 8; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(-16, 20); ctx.lineTo(-26, isRunning ? 15 + limbSwing : 38); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(16, 20); ctx.lineTo(26, isRunning ? 35 - limbSwing : 20); ctx.stroke();
-
-    ctx.beginPath(); ctx.moveTo(-9, 40); ctx.lineTo(-12 + limbSwing*0.3, 68 - bounce); ctx.moveTo(9, 40); ctx.lineTo(12 - limbSwing*0.3, 68 - bounce); ctx.stroke();
-
-    ctx.fillStyle = mainColor;
-    ctx.beginPath(); ctx.arc(0, -6, 14, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
-    ctx.beginPath(); ctx.ellipse(0, -4, 10, 7, 0, 0, Math.PI * 2); ctx.fill();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.arc(-4, -6, 2, 0, Math.PI * 2); ctx.arc(4, -6, 2, 0, Math.PI * 2); ctx.fill();
-
-    if (itemState === "banana" || itemState === "offered") {
-        let bX = itemState === "offered" ? 32 : 28; let bY = itemState === "offered" ? 10 : 25;
-        ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 5; ctx.lineCap = "round";
-        ctx.beginPath(); ctx.arc(bX, bY, 8, 0.3, Math.PI - 0.3); ctx.stroke();
-    }
-    ctx.restore();
-}
-
-function drawElegantQueen(x, y) {
-    ctx.save();
-    ctx.fillStyle = "#1b1932";
-    ctx.fillRect(x - 10, y + 68, 80, 14); 
-
-    let isAnim = (femaleApe.animationState === "dancing" || femaleApe.animationState === "boss" || femaleApe.animationState === "kissing");
-    let danceBob = isAnim ? Math.sin(animationFrameCount * 0.3) * 6 : 0;
-    
-    ctx.translate(x + 30, y + 10 + danceBob);
-
-    ctx.fillStyle = "#222538"; 
-    ctx.beginPath(); ctx.arc(0, 14, 15, 0, Math.PI * 2); ctx.arc(0, 36, 17, 0, Math.PI * 2); ctx.fill();
-    ctx.fillRect(-11, 14, 22, 22);
-
-    ctx.fillStyle = "#f43f5e";
-    ctx.beginPath(); ctx.arc(-5, 14, 6, 0, Math.PI * 2); ctx.arc(5, 14, 6, 0, Math.PI * 2); ctx.fill();
-    ctx.fillRect(-8, 24, 16, 4);
-
-    ctx.strokeStyle = "#222538"; ctx.lineWidth = 5; ctx.lineCap = "round";
-    if (femaleApe.animationState === "dancing" || femaleApe.animationState === "boss") {
-        ctx.beginPath(); ctx.moveTo(-12, 18); ctx.lineTo(-24, 4 + Math.sin(animationFrameCount*0.2)*6); 
-        ctx.moveTo(12, 18); ctx.lineTo(24, 4 - Math.sin(animationFrameCount*0.2)*6); ctx.stroke();
-    } else if (femaleApe.animationState === "kissing") {
-        ctx.beginPath(); ctx.moveTo(-12, 18); ctx.lineTo(-28, 24); 
-        ctx.moveTo(12, 18); ctx.lineTo(16, 38); ctx.stroke();
-    } else {
-        ctx.beginPath(); ctx.moveTo(-12, 18); ctx.quadraticCurveTo(-20, 28, -10, 42); ctx.moveTo(12, 18); ctx.quadraticCurveTo(20, 28, 10, 42); ctx.stroke();
-    }
-
-    ctx.save();
-    if(femaleApe.animationState === "kissing") ctx.translate(-10, 2); 
-    ctx.fillStyle = "#222538";
-    ctx.beginPath(); ctx.arc(0, -10, 11, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(244, 63, 94, 0.4)";
-    ctx.beginPath(); ctx.arc(-6, -6, 3, 0, Math.PI * 2); ctx.arc(6, -6, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-
-    ctx.fillStyle = "#fbbf24";
-    ctx.beginPath(); ctx.moveTo(-8, -20); ctx.lineTo(-11, -29); ctx.lineTo(-4, -25); ctx.lineTo(0, -34); ctx.lineTo(4, -25); ctx.lineTo(11, -29); ctx.lineTo(8, -20);
-    ctx.closePath(); ctx.fill();
-    ctx.restore();
-    
-    ctx.save();
-    ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
-    let statusLabel = "QUEEN 👑";
-    if (femaleApe.animationState === "dancing") statusLabel = "QUEEN 😍";
-    if (femaleApe.animationState === "boss") statusLabel = "HEARTBREAKER 💔";
-    if (femaleApe.animationState === "kissing") statusLabel = "KISSING LOVER ❤️💋";
-    ctx.fillText(statusLabel, x + 30, y - 35);
-    ctx.restore();
-}
-
-function draw() {
-    let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    skyGradient.addColorStop(0, "#121026"); skyGradient.addColorStop(0.7, "#1a1736"); skyGradient.addColorStop(1, "#231f4a");
-    ctx.fillStyle = skyGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = "#16142c";
-    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.bezierCurveTo(250, 240, 450, 320, 600, 210); ctx.bezierCurveTo(720, 120, 820, 280, canvas.width, GROUND_Y); ctx.fill();
-
-    ctx.fillStyle = "#1c1936"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.08)"; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
-
-    if (gameState === "MENU") return;
-
-    if (gameState === "INTRO") {
-        drawElegantQueen(femaleApe.x, femaleApe.y);
-        let shivamRunning = introTimer < 100 || introTimer >= 280;
-        drawSmoothApe(cutsceneActors.shivam.x, cutsceneActors.shivam.y, "#0c0a12", "#4b5563", shivamRunning, cutsceneActors.shivam.item);
+    function drawSmoothApe(x, y, mainColor, accentColor, isRunning, itemState = "none", angle = 0) {
+        ctx.save();
+        let bounce = isRunning ? Math.sin(Date.now() * 0.014) * 4 : 0;
+        let limbSwing = isRunning ? Math.sin(Date.now() * 0.014) * 12 : 0;
         
-        ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif";
-        ctx.fillText("SHIVAM JCOB 🦍", cutsceneActors.shivam.x + 5, cutsceneActors.shivam.y - 85);
+        ctx.translate(x + 25, y - 70 + bounce);
+        if(angle !== 0) ctx.rotate(angle);
 
-        if (introTimer >= 170) {
-            let orangeRunning = introTimer >= 220;
-            let itemCarried = cutsceneActors.orangeApe.hasBanana ? "banana" : "none";
-            drawSmoothApe(cutsceneActors.orangeApe.x, cutsceneActors.orangeApe.y, "#d97706", "#fef08a", orangeRunning, itemCarried);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+        ctx.beginPath(); ctx.ellipse(0, 70 - bounce, 22, 6, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = mainColor;
+        ctx.beginPath(); ctx.arc(0, 25, 20, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = accentColor;
+        ctx.beginPath(); ctx.arc(0, 23, 11, 0, Math.PI * 2); ctx.fill();
+
+        ctx.strokeStyle = mainColor; ctx.lineWidth = 8; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(-16, 20); ctx.lineTo(-26, isRunning ? 15 + limbSwing : 38); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(16, 20); ctx.lineTo(26, isRunning ? 35 - limbSwing : 20); ctx.stroke();
+
+        ctx.beginPath(); ctx.moveTo(-9, 40); ctx.lineTo(-12 + limbSwing*0.3, 68 - bounce); ctx.moveTo(9, 40); ctx.lineTo(12 - limbSwing*0.3, 68 - bounce); ctx.stroke();
+
+        ctx.fillStyle = mainColor;
+        ctx.beginPath(); ctx.arc(0, -6, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+        ctx.beginPath(); ctx.ellipse(0, -4, 10, 7, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(-4, -6, 2, 0, Math.PI * 2); ctx.arc(4, -6, 2, 0, Math.PI * 2); ctx.fill();
+
+        if (itemState === "banana" || itemState === "offered") {
+            let bX = itemState === "offered" ? 32 : 28; let bY = itemState === "offered" ? 10 : 25;
+            ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 5; ctx.lineCap = "round";
+            ctx.beginPath(); ctx.arc(bX, bY, 8, 0.3, Math.PI - 0.3); ctx.stroke();
         }
+        ctx.restore();
+    }
 
-        ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.font = "500 17px sans-serif"; ctx.textAlign = "center";
-        if (introTimer < 100) ctx.fillText("Shivam JCOB approaches carrying a magnificent banana!", canvas.width/2, 50);
-        else if (introTimer < 170) ctx.fillText("He proudly presents it to the gorgeous Queen...", canvas.width/2, 50);
-        else if (introTimer < 220) ctx.fillText("Suddenly! An Orange Thief intercepts from the canopy!", canvas.width/2, 50);
-        else ctx.fillText("The thief snatches the prize and runs ahead! Chasing initiated!", canvas.width/2, 50);
-        ctx.textAlign = "left";
-    } else {
-        platforms.forEach(plat => {
-            ctx.fillStyle = "#f43f5e"; ctx.shadowBlur = 10; ctx.shadowColor = "#f43f5e";
-            ctx.fillRect(plat.x, plat.y, plat.width, plat.height); ctx.shadowBlur = 0;
-        });
+    function drawElegantQueen(x, y) {
+        ctx.save();
+        ctx.fillStyle = "#1b1932";
+        ctx.fillRect(x - 10, y + 68, 80, 14); 
 
-        obstacles.forEach(obs => {
-            ctx.fillStyle = "#374151"; ctx.beginPath(); ctx.rect(obs.x, obs.y, obs.width, obs.height); ctx.fill();
-        });
+        let isAnim = (femaleApe.animationState === "dancing" || femaleApe.animationState === "boss" || femaleApe.animationState === "kissing");
+        let danceBob = isAnim ? Math.sin(animationFrameCount * 0.3) * 6 : 0;
+        
+        ctx.translate(x + 30, y + 10 + danceBob);
 
-        if (!isGameOver && bossConfig.beamWarning > 0) {
-            ctx.fillStyle = "rgba(244, 63, 94, 0.35)"; ctx.fillRect(0, bossConfig.beamY, canvas.width, 25);
-            ctx.fillStyle = "#ffffff"; ctx.font = "bold 12px sans-serif"; ctx.fillText("⚠️ DANGER: CHARM BEAM INCOMING", 30, bossConfig.beamY + 17);
+        ctx.fillStyle = "#222538"; 
+        ctx.beginPath(); ctx.arc(0, 14, 15, 0, Math.PI * 2); ctx.arc(0, 36, 17, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-11, 14, 22, 22);
+
+        ctx.fillStyle = "#f43f5e";
+        ctx.beginPath(); ctx.arc(-5, 14, 6, 0, Math.PI * 2); ctx.arc(5, 14, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-8, 24, 16, 4);
+
+        ctx.strokeStyle = "#222538"; ctx.lineWidth = 5; ctx.lineCap = "round";
+        if (femaleApe.animationState === "dancing" || femaleApe.animationState === "boss") {
+            ctx.beginPath(); ctx.moveTo(-12, 18); ctx.lineTo(-24, 4 + Math.sin(animationFrameCount*0.2)*6); 
+            ctx.moveTo(12, 18); ctx.lineTo(24, 4 - Math.sin(animationFrameCount*0.2)*6); ctx.stroke();
+        } else if (femaleApe.animationState === "kissing") {
+            ctx.beginPath(); ctx.moveTo(-12, 18); ctx.lineTo(-28, 24); 
+            ctx.moveTo(12, 18); ctx.lineTo(16, 38); ctx.stroke();
+        } else {
+            ctx.beginPath(); ctx.moveTo(-12, 18); ctx.quadraticCurveTo(-20, 28, -10, 42); ctx.moveTo(12, 18); ctx.quadraticCurveTo(20, 28, 10, 42); ctx.stroke();
         }
-        if (!isGameOver && bossConfig.beamActive > 0) {
-            ctx.fillStyle = "#f43f5e"; ctx.shadowBlur = 25; ctx.shadowColor = "#f43f5e";
-            ctx.fillRect(0, bossConfig.beamY, canvas.width, 25); ctx.fillStyle = "#fff"; ctx.fillRect(0, bossConfig.beamY + 6, canvas.width, 13); ctx.shadowBlur = 0;
-        }
-
-        items.forEach(item => {
-            ctx.save();
-            let bounce = Math.sin(item.pulse) * 4; ctx.translate(item.x + 15, item.y + 15 + bounce);
-            if (item.type === "banana") {
-                ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.beginPath(); ctx.arc(0, 0, 9, 0.3, Math.PI - 0.3); ctx.stroke();
-            } else if (item.type === "fake_banana") {
-                ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.beginPath(); ctx.arc(0, 0, 9, 0.3, Math.PI - 0.3); ctx.stroke();
-                ctx.fillStyle = "#f43f5e"; ctx.beginPath(); ctx.arc(-2, -6, 2, 0, Math.PI*2); ctx.fill();
-            } else if (item.type === "heart_charm") {
-                ctx.fillStyle = "#f43f5e"; ctx.beginPath(); ctx.moveTo(0, -6); ctx.bezierCurveTo(-6, -12, -14, -6, -14, 2); ctx.bezierCurveTo(-14, 10, -4, 16, 0, 22); ctx.bezierCurveTo(4, 16, 14, 10, 14, 2); ctx.bezierCurveTo(14, -6, 6, -12, 0, -6); ctx.fill();
-            }
-            ctx.restore();
-        });
-
-        particles.forEach(p => {
-            ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-        });
-
-        drawElegantQueen(femaleApe.x, femaleApe.y);
-        drawSmoothApe(player.x, player.y, "#0c0a12", "#4b5563", !isGameOver && player.isGrounded, "none", player.rotation);
 
         ctx.save();
-        ctx.fillStyle = rizzTimer > 0 ? "#f43f5e" : "#ffffff"; ctx.font = "bold 14px sans-serif";
-        ctx.fillText(isGameOver ? "ELIMINATED" : player.tag, player.x + 5, player.y - 85);
+        if(femaleApe.animationState === "kissing") ctx.translate(-10, 2); 
+        ctx.fillStyle = "#222538";
+        ctx.beginPath(); ctx.arc(0, -10, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(244, 63, 94, 0.4)";
+        ctx.beginPath(); ctx.arc(-6, -6, 3, 0, Math.PI * 2); ctx.arc(6, -6, 3, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
 
-        if (isGameOver && gameOverTimer >= 40) {
-            drawSmoothApe(endingActors.orangeApeX, endingActors.orangeApeY, "#d97706", "#fef08a", gameOverTimer < 85, endingActors.hasBanana ? "banana" : "none");
-            ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px sans-serif";
-            ctx.fillText("ORANGE THIEF 🐒", endingActors.orangeApeX - 10, endingActors.orangeApeY - 85);
-        }
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath(); ctx.moveTo(-8, -20); ctx.lineTo(-11, -29); ctx.lineTo(-4, -25); ctx.lineTo(0, -34); ctx.lineTo(4, -25); ctx.lineTo(11, -29); ctx.lineTo(8, -20);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+        
+        ctx.save();
+        ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+        let statusLabel = "QUEEN 👑";
+        if (femaleApe.animationState === "dancing") statusLabel = "QUEEN 😍";
+        if (femaleApe.animationState === "boss") statusLabel = "HEARTBREAKER 💔";
+        if (femaleApe.animationState === "kissing") statusLabel = "KISSING LOVER ❤️💋";
+        ctx.fillText(statusLabel, x + 30, y - 35);
+        ctx.restore();
+    }
 
-        if (isGameOver && endingActors.bananaThrown) {
-            ctx.save();
-            ctx.translate(endingActors.bananaX, endingActors.bananaY);
-            ctx.rotate(endingActors.bananaRot);
-            ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 5; ctx.lineCap = "round";
-            ctx.beginPath(); ctx.arc(0, 0, 9, 0.3, Math.PI - 0.3); ctx.stroke();
-            ctx.restore();
-        }
+    function draw() {
+        let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        skyGradient.addColorStop(0, "#121026"); skyGradient.addColorStop(0.7, "#1a1736"); skyGradient.addColorStop(1, "#231f4a");
+        ctx.fillStyle = skyGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        if (isGameOver && gameOverTimer >= 150) {
-            ctx.fillStyle = "rgba(11, 10, 22, 0.5)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#16142c";
+        ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.bezierCurveTo(250, 240, 450, 320, 600, 210); ctx.bezierCurveTo(720, 120, 820, 280, canvas.width, GROUND_Y); ctx.fill();
+
+        ctx.fillStyle = "#1c1936"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)"; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
+
+        if (gameState === "MENU") return;
+
+        if (gameState === "INTRO") {
+            drawElegantQueen(femaleApe.x, femaleApe.y);
+            let shivamRunning = introTimer < 100 || introTimer >= 280;
+            drawSmoothApe(cutsceneActors.shivam.x, cutsceneActors.shivam.y, "#0c0a12", "#4b5563", shivamRunning, cutsceneActors.shivam.item);
             
-            ctx.fillStyle = "#f43f5e";
-            ctx.font = "900 72px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("THE END", canvas.width / 2, canvas.height / 2 - 20);
-            
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 16px sans-serif";
-            ctx.fillText("Press SPACEBAR to retry", canvas.width / 2, canvas.height / 2 + 30);
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif";
+            ctx.fillText("SHIVAM JCOB 🦍", cutsceneActors.shivam.x + 5, cutsceneActors.shivam.y - 85);
+
+            if (introTimer >= 170) {
+                let orangeRunning = introTimer >= 220;
+                let itemCarried = cutsceneActors.orangeApe.hasBanana ? "banana" : "none";
+                drawSmoothApe(cutsceneActors.orangeApe.x, cutsceneActors.orangeApe.y, "#d97706", "#fef08a", orangeRunning, itemCarried);
+            }
+
+            ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.font = "500 17px sans-serif"; ctx.textAlign = "center";
+            if (introTimer < 100) ctx.fillText("Shivam JCOB approaches carrying a magnificent banana!", canvas.width/2, 50);
+            else if (introTimer < 170) ctx.fillText("He proudly presents it to the gorgeous Queen...", canvas.width/2, 50);
+            else if (introTimer < 220) ctx.fillText("Suddenly! An Orange Thief intercepts from the canopy!", canvas.width/2, 50);
+            else ctx.fillText("The thief snatches the prize and runs ahead! Chasing initiated!", canvas.width/2, 50);
             ctx.textAlign = "left";
+        } else {
+            platforms.forEach(plat => {
+                ctx.fillStyle = "#f43f5e"; ctx.shadowBlur = 10; ctx.shadowColor = "#f43f5e";
+                ctx.fillRect(plat.x, plat.y, plat.width, plat.height); ctx.shadowBlur = 0;
+            });
+
+            obstacles.forEach(obs => {
+                ctx.fillStyle = "#374151"; ctx.beginPath(); ctx.rect(obs.x, obs.y, obs.width, obs.height); ctx.fill();
+            });
+
+            if (!isGameOver && bossConfig.beamWarning > 0) {
+                ctx.fillStyle = "rgba(244, 63, 94, 0.35)"; ctx.fillRect(0, bossConfig.beamY, canvas.width, 25);
+                ctx.fillStyle = "#ffffff"; ctx.font = "bold 12px sans-serif"; ctx.fillText("⚠️ DANGER: CHARM BEAM INCOMING", 30, bossConfig.beamY + 17);
+            }
+            if (!isGameOver && bossConfig.beamActive > 0) {
+                ctx.fillStyle = "#f43f5e"; ctx.shadowBlur = 25; ctx.shadowColor = "#f43f5e";
+                ctx.fillRect(0, bossConfig.beamY, canvas.width, 25); ctx.fillStyle = "#fff"; ctx.fillRect(0, bossConfig.beamY + 6, canvas.width, 13); ctx.shadowBlur = 0;
+            }
+
+            items.forEach(item => {
+                ctx.save();
+                let bounce = Math.sin(item.pulse) * 4; ctx.translate(item.x + 15, item.y + 15 + bounce);
+                if (item.type === "banana") {
+                    ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.beginPath(); ctx.arc(0, 0, 9, 0.3, Math.PI - 0.3); ctx.stroke();
+                } else if (item.type === "fake_banana") {
+                    ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.beginPath(); ctx.arc(0, 0, 9, 0.3, Math.PI - 0.3); ctx.stroke();
+                    ctx.fillStyle = "#f43f5e"; ctx.beginPath(); ctx.arc(-2, -6, 2, 0, Math.PI*2); ctx.fill();
+                } else if (item.type === "heart_charm") {
+                    ctx.fillStyle = "#f43f5e"; ctx.beginPath(); ctx.moveTo(0, -6); ctx.bezierCurveTo(-6, -12, -14, -6, -14, 2); ctx.bezierCurveTo(-14, 10, -4, 16, 0, 22); ctx.bezierCurveTo(4, 16, 14, 10, 14, 2); ctx.bezierCurveTo(14, -6, 6, -12, 0, -6); ctx.fill();
+                }
+                ctx.restore();
+            });
+
+            particles.forEach(p => {
+                ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            });
+
+            drawElegantQueen(femaleApe.x, femaleApe.y);
+            drawSmoothApe(player.x, player.y, "#0c0a12", "#4b5563", !isGameOver && player.isGrounded, "none", player.rotation);
+
+            ctx.save();
+            ctx.fillStyle = rizzTimer > 0 ? "#f43f5e" : "#ffffff"; ctx.font = "bold 14px sans-serif";
+            ctx.fillText(isGameOver ? "ELIMINATED" : player.tag, player.x + 5, player.y - 85);
+            ctx.restore();
+
+            if (isGameOver && gameOverTimer >= 40) {
+                drawSmoothApe(endingActors.orangeApeX, endingActors.orangeApeY, "#d97706", "#fef08a", gameOverTimer < 85, endingActors.hasBanana ? "banana" : "none");
+                ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px sans-serif";
+                ctx.fillText("ORANGE THIEF 🐒", endingActors.orangeApeX - 10, endingActors.orangeApeY - 85);
+            }
+
+            if (isGameOver && endingActors.bananaThrown) {
+                ctx.save();
+                ctx.translate(endingActors.bananaX, endingActors.bananaY);
+                ctx.rotate(endingActors.bananaRot);
+                ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 5; ctx.lineCap = "round";
+                ctx.beginPath(); ctx.arc(0, 0, 9, 0.3, Math.PI - 0.3); ctx.stroke();
+                ctx.restore();
+            }
+
+            if (isGameOver && gameOverTimer >= 150) {
+                ctx.fillStyle = "rgba(11, 10, 22, 0.5)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = "#f43f5e";
+                ctx.font = "900 72px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("THE END", canvas.width / 2, canvas.height / 2 - 20);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px sans-serif";
+                ctx.fillText("Press SPACEBAR to retry", canvas.width / 2, canvas.height / 2 + 30);
+                ctx.textAlign = "left";
+            }
         }
     }
-}
 
-function gameLoop() {
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-gameLoop();
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+};
 </script>
 
 </body>
