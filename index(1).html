@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="canonical" href="https://yourdomain.com/index.html">
+    <!-- 💡 TIP: Update this to match your live Vercel URL too -->
+    <link rel="canonical" href="https://your-project-name.vercel.app/index.html">
     <title>Shivam JCOB: Banana Pursuit</title>
     
     <!-- Mandatory AMP Core JS Library -->
@@ -63,11 +64,12 @@
     <div class="container">
         <!-- Secure Iframe for Canvas Logic Separation -->
         <div class="game-wrapper">
+            <!-- ⚠️ FIXED: Changed from relative path to absolute HTTPS URL -->
             <amp-iframe width="900" height="450"
                 sandbox="allow-scripts allow-same-origin allow-forms"
                 layout="responsive"
                 frameborder="0"
-                src="https://yourdomain.com/game-engine.html">
+                src="https://your-project-name.vercel.app/game-engine.html">
                 <!-- Fallback layout block mandatory for AMP iframes close to viewports -->
                 <div placeholder class="loading-placeholder" style="background:#141226;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
                     🎬 LOADING BROWSER ENGINE...
